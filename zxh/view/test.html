@@ -1,0 +1,175 @@
+<?xml version="1.0" encoding="UTF-8\">
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>学生信息管理系统-赵新贺-20216852</title>
+</head>
+<body>
+<body><h1>--欢迎来到学生信息管理系统！--</h1></body>
+
+<style>
+</style>
+<table id="info">
+    <thead>
+        <tr>
+            <th style="width: 40px;"></th>
+            <th style="width: 185px;">学 号</th>
+            <th style="width: 185px;">姓 名</th>
+        </tr>
+    </thead>
+    <tbody>
+
+    </tbody>
+    <tfoot>
+        <tr>
+            <td></td>
+            <td style="text-align: center;"><button id="add" onclick="add()">添加</button></td>
+            <td style="text-align: center;"><button id="recall">撤销</button></td>
+            <td style="text-align: right;"><button id="esc" >退出</button></td>
+        </tr>
+    </tfoot>
+</table>
+
+
+<script type="application/javascript">
+    var u = "http://localhost:8080/";
+    //封装请求
+    var xhr = function (url, func, data = ""){
+        let request = new XMLHttpRequest();
+        request.open("POST", u+url);
+        request.send(data);
+        request.onreadystatechange = function (){
+            if(request.readyState == 4 && request.status == 200){
+                func(request);
+            }
+        };
+    }
+    //封装字符串判空
+    var isEmpty = function (str){
+        if(typeof str == 'string'){
+            if(str != null && str != undefined && str != ''){
+                return false;
+            }
+        }
+        return true;
+    }
+    //删除
+    var reduceF = function (obj){
+        //学号
+        var num = obj.parentNode.nextSibling.firstChild.value;
+        xhr("reduce", function(){
+
+        }, num);
+        obj.parentNode.parentNode.remove();
+    }
+    //退出
+    var escF = function (){
+        if (confirm("您确定要关闭学生管理系统吗？")){
+        window.opener=null;
+        window.open('','_self');
+        //不同浏览器关闭方法不同
+        window.location.href='about::blank';
+        window.close();
+    }
+    else{}
+        xhr("esc", function(){
+
+        });
+    }
+    //添加
+    var addF = function (value, name){
+        var tbody = document.getElementById("info").tBodies[0];
+        var tr = document.createElement("tr");
+        var td1 = document.createElement("td");
+        td1.innerHTML = "<button onclick='reduceF(this)'>➖</button>";
+        tr.appendChild(td1);
+        var td2 = document.createElement("td");
+        td2.innerHTML = "<input type=\"text\" value=\""+value+"\" onblur='listen(this)'/>";
+        tr.appendChild(td2);
+        var td3 = document.createElement("td");
+        td3.innerHTML = "<input type=\"text\" value=\""+name+"\" onblur='listen(this)'/>";
+        tr.appendChild(td3);
+        tbody.appendChild(tr);
+    }
+
+    //页面加载
+    window.onload = function () {
+        //发送请求获取文件持久化数据
+        var func = function (request){
+            var json = request.responseText;
+            if(isEmpty(json)){
+                return;
+            }
+            var arr = JSON.parse(json);
+            if(arr != null && arr.length > 0){
+                for(i of arr){
+                    addF(i["num"], i["name"]);
+                }
+            }
+        };
+        xhr("get", func);
+
+    }
+    //获取dom元素
+    var add = function () {
+        addF('', '');
+    }
+
+    //input监听
+    var listen = function (obj){
+        var childs = obj.parentNode.parentNode.childNodes;
+        //获取两个input框
+        var num = childs[1].firstChild;
+        var name = childs[2].firstChild;
+        var numV = num.value;
+        var nameV = name.value;
+
+        if(isEmpty(numV) || isEmpty(nameV)){
+            return;
+        }
+
+        var data = "{'num': '"+numV+"','name': '"+nameV+"'}"
+
+        //发送请求持久化
+        xhr("add", function (request){
+            var mes = request.responseText;
+            if(isEmpty(mes)){
+                return;
+            }
+            alert("添加失败！");
+            num.value = "";
+            name.value = "";
+        }, data);
+    }
+
+    var recall = document.getElementById('recall');
+    recall.onclick = function (){
+        xhr("recall", function (request){
+            var mes = request.responseText;
+            if(mes == "error"){
+                alert("没有可以撤销的！");
+            }else{
+                var tbody = document.getElementById("info").tBodies[0];
+                tbody.innerHTML = "";
+                var arr = JSON.parse(mes);
+                if(arr != null && arr.length > 0){
+                    for(i of arr){
+                        addF(i["num"], i["name"]);
+                    }
+                }
+            }
+        });
+    }
+    var esc = document.getElementById('esc');
+    esc.onclick = function () {
+        escF();
+        xhr("esc", function (request) {
+
+        });
+    }
+
+</script>
+
+</body>
+</html>

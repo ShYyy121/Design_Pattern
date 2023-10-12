@@ -1,0 +1,153 @@
+<?xml version="1.0" encoding="UTF-8\">
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>学生信息管理系统-赵新贺-20216852</title>
+</head>
+<body>
+<body><h1>--欢迎来到学生信息管理系统！--</h1></body>
+
+<style>
+</style>
+<table>
+    <th>
+        <td><button id="recall"> ◀ </button></td>
+        <td>学 号</td>
+        <td>姓 名</td>
+    </th>
+    <tr>
+        <td>400</td>
+        <td>500</td>
+        <td>600</td>
+    </tr>
+</table>
+<div>
+    <b id="p1"></b>
+    <b id="p2"></b>
+    <div  style="Display:inline-block">
+
+    </div>
+</div>
+<div id="info">
+
+    <div id="btn-div" style=""><button id="add" onclick="add()"> ➕ </button>
+    </div>
+</div>
+
+
+<script type="application/javascript">
+    var u = "http://localhost:8080/";
+    //封装请求
+    var xhr = function (url, func, data = ""){
+        let request = new XMLHttpRequest();
+        request.open("POST", u+url);
+        request.send(data);
+        request.onreadystatechange = function (){
+            if(request.readyState == 4 && request.status == 200){
+                func(request);
+            }
+        };
+    }
+    //封装字符串判空
+    var isEmpty = function (str){
+        if(typeof str == 'string'){
+            if(str != null && str != undefined && str != ''){
+                return false;
+            }
+        }
+        return true;
+    }
+    //删除
+    var reduceF = function (obj){
+        //学号
+        var num = obj.parentNode.childNodes[1].firstChild.value;
+        xhr("reduce", function(){
+
+        }, num);
+        obj.parentNode.remove();
+    }
+    //添加
+    var addF = function (value, name){
+        var btnDiv = document.getElementById("btn-div");
+        var newDom = document.createElement("div");
+        var html = "<div class='reduce' style=\"Display:inline-block\" onclick='reduceF(this)'><button>➖</button></div>" +
+            "<div style=\"Display:inline-block\"><input type=\"text\" value=\""+value+"\" onblur='listen(this)'></div>" +
+            "<div style=\"Display:inline-block\"><input type=\"text\" value=\""+name+"\" onblur='listen(this)'></div>"
+        newDom.innerHTML = html;
+        btnDiv.parentNode.insertBefore(newDom, btnDiv);
+    }
+
+    //页面加载
+    window.onload = function () {
+        //发送请求获取文件持久化数据
+        var func = function (request){
+            var json = request.responseText;
+            if(isEmpty(json)){
+                return;
+            }
+            var arr = JSON.parse(json);
+            if(arr != null && arr.length > 0){
+                for(i of arr){
+                    addF(i["num"], i["name"]);
+                }
+            }
+        };
+        xhr("get", func);
+
+    }
+    //获取dom元素
+    var add = function () {
+        addF('', '');
+    }
+
+    //input监听
+    var listen = function (obj){
+        var childs = obj.parentNode.parentNode.childNodes;
+        //获取两个input框
+        var num = childs[1].firstChild;
+        var name = childs[2].firstChild;
+        var numV = num.value;
+        var nameV = name.value;
+
+        if(isEmpty(numV) || isEmpty(nameV)){
+            return;
+        }
+
+        var data = "{'num': '"+numV+"','name': '"+nameV+"'}"
+
+        //发送请求持久化
+        xhr("add", function (request){
+            var mes = request.responseText;
+            if(isEmpty(mes)){
+                return;
+            }
+            alert("添加失败！");
+            num.value = "";
+            name.value = "";
+        }, data);
+    }
+
+    var recall = document.getElementById('recall');
+    recall.onclick = function (){
+        xhr("recall", function (request){
+            var mes = request.responseText;
+            if(mes == "error"){
+                alert("撤销失败！");
+            }else{
+                var info = document.getElementById("info");
+                info.innerHTML = "<div id=\"btn-div\" style=\"\"><button id=\"add\" onclick=\"add()\"> ➕ </button> </div>";
+                var arr = JSON.parse(mes);
+                if(arr != null && arr.length > 0){
+                    for(i of arr){
+                        addF(i["num"], i["name"]);
+                    }
+                }
+            }
+
+        });
+    }
+
+</script>
+</body>
+</html>
